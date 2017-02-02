@@ -34,12 +34,24 @@ window.onload = function()
     
     function refreshCanvas() {
         
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         snakee.move();
-        snakee.draw();
         
-        applee.draw();
-        setTimeout(refreshCanvas, delay);
+        if ( snakee.checkCollision() ) {
+            
+            snakee.gameOver();
+            
+        } else {
+        
+            if ( snakee.checkApple(applee) ) {
+                applee.setNewPosition();
+            }
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            snakee.draw();
+
+            applee.draw();
+            setTimeout(refreshCanvas, delay);
+            
+        }
     }
     
     function drawBlock(ctx, position) {
@@ -58,11 +70,20 @@ window.onload = function()
             ctx.fillStyle = "#3c3";
             ctx.beginPath();
             var radius = blockSize / 2;
-            var x = position[0] * blockSize + radius;
-            var y = position[1] * blockSize + radius;
+            var x = this.position[0] * blockSize + radius;
+            var y = this.position[1] * blockSize + radius;
             ctx.arc(x, y, radius, 0, Math.PI * 2, true);
             ctx.fill();
             ctx.restore();    
+        }
+        
+        this.setNewPosition = function() {
+            
+            var newX = Math.round(Math.random() * (widthInBlocks - 1));
+            var newY = Math.round(Math.random() * (heightInBlocks - 1));
+            
+            this.position = [newX, newY];
+            
         }
         
     }
@@ -136,8 +157,49 @@ window.onload = function()
         
         this.checkCollision = function() {
             
-            var wallCollision = true;
-            var snakeCollision = true;
+            var wallCollision = false;
+            var snakeCollision = false;
+            
+            var head = this.body[0];
+            var rest = this.body.slice(1);
+            
+            var snakeX = head[0];
+            var snakeY = head[1];
+            
+            var minX = 0;
+            var minY = 0;
+            var maxX = widthInBlocks - 1;
+            var maxY = heightInBlocks - 1;
+            
+            var isOutHorizontally = snakeX < minX || snakeX > maxX;
+            var isOutVertically = snakeY < minY || snakeY > maxY;
+            
+            // Check wall collision
+            if ( isOutHorizontally || isOutVertically ) {
+                wallCollision = true;
+            }
+            
+            // Check body collision
+            for ( var i = 0; i < rest.length; i++ ) {
+                
+                if ( snakeX === rest[i][0] && snakeY === rest[i][1] ) {
+                    snakeCollision = true;                    
+                }
+                
+            }
+            
+            return wallCollision || snakeCollision;
+        };
+        
+        this.checkApple = function(appleToEat) {
+            
+            var head = this.body[0];
+            
+            if ( head[0] === appleToEat.position[0] && head[1] === appleToEat.position[1] ) {
+                return true;
+            } else {
+                return false; 
+            }
         }
     }
     
